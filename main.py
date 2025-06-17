@@ -14,23 +14,22 @@ class FileReader():
     def __init__(self):
         self.files_text = {}
 
-    def read_files(self, filepath='docs'):
-        files = os.listdir("docs")
-        for file in files:
+    def read_files(self, filepaths):
+        for file in filepaths:
             file_type = file.split('.')[-1]
-            file_name = file.split('.')[0]
+            file_name = file.split('/')[-1]
             if file_type == 'txt':
-                file = open(f'{filepath}\\{file}', "r", encoding="utf-8")
+                file = open(file, "r", encoding="utf-8")
                 text = file.read()
                 self.files_text[file_name] = text
                 file.close()
             if file_type == 'docx':
                 doc = Document()
-                doc.LoadFromFile(f'{filepath}\\{file}')
+                doc.LoadFromFile(file)
                 text = doc.GetText()
                 self.files_text[file_name] = text
             if file_type == 'pdf':
-                reader = PdfReader(f'{filepath}\\{file}')
+                reader = PdfReader(file)
                 text = ''
                 for page in reader.pages:
                     text += page.extract_text()
@@ -136,7 +135,7 @@ class DictWork():
 if __name__ == "__main__":
 
     reader = FileReader()
-    reader.read_files()
+    reader.read_files(['C:/Dev/DIPLOM/docs/1.txt', 'C:/Dev/DIPLOM/docs/2.docx', 'C:/Dev/DIPLOM/docs/3.pdf'])
 
     preparer = TextPrepare()
     preparer.prepare(reader.files_text)
