@@ -12,7 +12,8 @@ class App(ctk.CTk):
     filepaths = []
     dictpath = "C:\Dev\DIPLOM\dicts\dictionary.pkl" # ВСТАВИТЬ ДЕФОЛТ ВАРИАНТ
     keywords = []
-    search_range = "1"
+    search_range_l = "1"
+    search_range_r = "1"
     emot_dict = {}
     emot_dict_path = ""
     lang = "ru"
@@ -23,7 +24,7 @@ class App(ctk.CTk):
         super().__init__()
 
         self.title("Main")
-        self.geometry("800x700")
+        self.geometry("800x800")
         self.grid_columnconfigure((0, 1), weight=1)
         self.resizable(False, False)
 
@@ -46,19 +47,28 @@ class App(ctk.CTk):
             self.new_window.geometry("800x600")
             self.new_window.resizable(False, False)
 
-            label_dict_red = ctk.CTkLabel(self.new_window, text="Выберите словарь", font=("Arial", 12, "bold"))
-            label_dict_red.grid(row=0, column=0, sticky="w", padx=5, pady=5)
+            self.label_dict_red = ctk.CTkLabel(self.new_window, text="Выберите словарь", font=("Arial", 12, "bold"))
+            self.label_dict_red.grid(row=0, column=0, sticky="w", padx=5, pady=5)
             self.dict_button = ctk.CTkButton(self.new_window, text="Выбрать словарь", command=self.load_dict)
-            self.dict_button.grid(row=1, column=0, padx=5, pady=5, sticky="w", columnspan=2)
+            self.dict_button.grid(row=1, column=0, padx=5, pady=5, sticky="nsew", columnspan=2)
 
             self.dict_table = ctk.CTkFrame(self.new_window)
             self.dict_table.grid(row=2, column=0, padx=5, pady=5, sticky="nsew")
 
+            self.dict_frame = ctk.CTkFrame(self.new_window)
+            self.dict_frame.grid(row=2, column=1, padx=5, pady=5, sticky="nsew")
+
             self.dict_button1 = ctk.CTkButton(self.new_window, text="Сохранить", command=self.save_dict)
-            self.dict_button1.grid(row=5, column=0, padx=20, pady=20, sticky="s")
+            self.dict_button1.grid(row=5, column=0, padx=20, pady=20, sticky="nsew")
 
             self.dict_button2 = ctk.CTkButton(self.new_window, text="Сохранить как", command=self.save_dict_as)
-            self.dict_button2.grid(row=5, column=1, padx=20, pady=20, sticky="s")
+            self.dict_button2.grid(row=5, column=1, padx=20, pady=20, sticky="nsew")
+
+            self.dict_sort1 = ctk.CTkButton(self.dict_frame, text="Отсортировать\n по словам", command=self.sort_word)
+            self.dict_sort1.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+
+            self.dict_sort2 = ctk.CTkButton(self.dict_frame, text="Отсортировать\n по оценкам", command=self.sort_value)
+            self.dict_sort2.grid(row=1, column=0, padx=20, pady=20, sticky="nsew")
 
             self.dict_table_draw()
             self.new_window.protocol("WM_DELETE_WINDOW", self.closing_dict)
@@ -68,15 +78,46 @@ class App(ctk.CTk):
         self.new_window.destroy()
 
     def dict_table_draw(self):
-        self.sheet = tksheet.Sheet(self.dict_table)
+        self.sheet = tksheet.Sheet(self.dict_table, sort_key=tksheet.natural_sort_key)
+        self.sheet.enable_bindings(("single_select",
+                                    "row_select",
+                                    "column_width_resize",
+                                    "arrowkeys",
+                                    "right_click_popup_menu",
+                                    "rc_select",
+                                    "rc_insert_row",
+                                    "rc_delete_row",
+                                    "copy",
+                                    "cut",
+                                    "paste",
+                                    "delete",
+                                    "undo",
+                                    "edit_cell"))
+        self.sheet.set_options(edit_cell_label= "Редактировать",
+                                cut_label= "Вырезать",
+                                cut_contents_label= "Скопировать",
+                                copy_label= "Скопировать",
+                                paste_label= "Вставить",
+                                delete_label= "Удалить",
+                                clear_contents_label= "Очистить содержимое",
+                                delete_rows_label= "Удалить строки",
+                                insert_rows_above_label= "Вставить строку сверху",
+                                insert_rows_below_label= "Вставить строку снизу",
+                                insert_row_label= "Вставить строку",
+                                )
         self.sheet.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
         self.sheet.headers(["Слово", "Оценка"])
-        self.sheet.enable_bindings(("single_select","row_select","column_width_resize","arrowkeys","right_click_popup_menu","rc_select","rc_insert_row","rc_delete_row","copy","cut","paste","delete","undo","edit_cell"))
         self.sheet.dropdown("B", values=[2, 1, -1, -2])
         table = [["Пример", "1"]]
         for key, value in self.emot_dict.items():
             table.append([key, value])
         self.sheet.set_sheet_data(table)
+
+    def sort_word(self):
+        self.sheet.sort_rows_by_column(0)
+
+    def sort_value(self):
+        self.sheet.sort_rows_by_column(1, True)
 
     def add_data_table(self, data):
         self.sheet.set_sheet_data([])
@@ -98,17 +139,16 @@ class App(ctk.CTk):
         if filepath.split('.')[-1] == "pkl":
             with open(filepath, 'rb') as f:
                 emot_dict = pickle.load(f)
+            if type(emot_dict) == dict:
+                self.emot_dict = emot_dict
+                self.emot_dict_path = filepath
+                self.add_data_table(self.emot_dict)
+                name = filepath.split('/')[-1]
+                self.label_dict_red.configure(text=f"Выбранный словарь: {name}")
+            else:
+                mb.showerror("Ошибка", "Струтура файлв не является словарём")
         else:
             mb.showerror("Ошибка", "Не верный формат словаря, словарь должен иметь формат .pkl")
-        if type(emot_dict) == dict:
-            self.emot_dict = emot_dict
-            self.emot_dict_path = filepath
-            self.add_data_table(self.emot_dict)
-            name = filepath.split('/')[-1]
-            label_dict_red = ctk.CTkLabel(self.new_window, text=f"Выбранный словарь:{name}", font=("Arial", 12, "bold"))
-            label_dict_red.grid(row=0, column=0, sticky="w", padx=5, pady=5)
-        else:
-            mb.showerror("Ошибка", "Струтура файлв не является словарём")
 
     def save_dict(self):
         self.from_table_to_dict()
@@ -195,12 +235,12 @@ class App(ctk.CTk):
         ranges=["1","2","3","4","5","6"]
         label = ctk.CTkLabel(self.settings_frame, text=f"Выберите размер левого контекста", font=("Arial", 12))
         label.grid(row=1, column=0, sticky="w", padx=5, pady=5)
-        self.settings_range_l = ctk.CTkOptionMenu(self.settings_frame, values=ranges, command=self.set_range)
+        self.settings_range_l = ctk.CTkOptionMenu(self.settings_frame, values=ranges, command=self.set_range_l)
         self.settings_range_l.grid(row=2, column=0, padx=5, pady=5, sticky="n")
 
         label = ctk.CTkLabel(self.settings_frame, text=f"Выберите размер правого контекста", font=("Arial", 12))
         label.grid(row=1, column=1, sticky="w", padx=5, pady=5)
-        self.settings_range_r = ctk.CTkOptionMenu(self.settings_frame, values=ranges, command=self.set_range)
+        self.settings_range_r = ctk.CTkOptionMenu(self.settings_frame, values=ranges, command=self.set_range_r)
         self.settings_range_r.grid(row=2, column=1, padx=5, pady=5, sticky="n")
 
         label = ctk.CTkLabel(self.settings_frame, text=f"Выберите язык документов", font=("Arial", 12))
@@ -213,13 +253,14 @@ class App(ctk.CTk):
         self.keywords_add_button = ctk.CTkButton(self.settings_frame, text="Начать анализ", font=("Arial", 20, "bold"), command=self.start_analyze)
         self.keywords_add_button.grid(row=5, column=0, padx=5, pady=5, sticky="s", columnspan=2)
 
-    def set_range(self, value):
-        self.search_range = value
-        print(self.search_range)
+    def set_range_l(self, value):
+        self.search_range_l = value
+
+    def set_range_r(self, value):
+        self.search_range_r = value
 
     def set_lang(self, value):
         self.lang = value
-        print(self.search_range)
 
     def start_analyze(self):
 
@@ -255,11 +296,15 @@ class App(ctk.CTk):
                 self.results_open_flag = True
 
     def open_results_window(self, data):
-        self.dict_redactor_closed_flag = False
+        self.results_open_flag = False
         self.results_window = ctk.CTkToplevel(self)
         self.results_window.title("Результаты")
-        self.results_window.geometry("1000x800")
+        self.results_window.geometry("1200x900")
         self.results_window.resizable(False, False)
+
+        #self.sheet = tksheet.Sheet(self.results_window)
+        #self.sheet.grid(row=0, column=0, padx=20, pady=20, sticky="nsew", width=750, height=300)
+        #self.sheet.headers(['Документ', 'Вхождений всего', 'Вхождений 1', 'Вхождений 2', 'Процент Вхождений', 'Вхождений -1', 'Вхождений -2',])
 
         self.results_table = ctk.CTkScrollableFrame(self.results_window, width=750, height=300)
         self.results_table.grid(row=0, column=0, padx=20, pady=20, sticky="w")
@@ -287,7 +332,11 @@ class App(ctk.CTk):
         docs_full = data.keys()
         docs = []
         for doc in docs_full:
-            docs.append(doc.split('/')[-1])
+            name = doc.split('/')[-1]
+            if len(name) > 20:
+                name = name[0:7] + '...' + name[-7:-1] + name[-1]
+                print(name)
+            docs.append(name)
         count = []
         count_procents = []
         count_pos1 = []
@@ -304,37 +353,55 @@ class App(ctk.CTk):
 
         fig1, ax1 = plt.subplots()
         ax1.plot(docs, count, ':', label='Вхождений всего', color='blue', marker='o', markersize=3)
-        ax1.plot(docs, count_pos1, '-', label='Вхождений с оценкой 1', color='green', marker='o', markersize=5)
-        ax1.plot(docs, count_pos2, '--', label='Вхождений с оценкой 2', color='lime', marker='o', markersize=6)
-        ax1.plot(docs, count_neg1, '-.', label='Вхождений с оценкой -1', color='darkred', marker='o', markersize=4)
-        ax1.plot(docs, count_neg2, ':', label='Вхождений с оценкой -2', color='red', marker='o', markersize=3)
         ax1.set_xlabel('Документы')
-        ax1.set_ylabel('Кол-во вхождений')
+        ax1.set_title('Количествово вхождений')
         ax1.legend(fontsize=9)
+        ax1.set_xticklabels(docs, minor=False, rotation=90)
 
         fig2, ax2 = plt.subplots()
 
         ax2.plot(docs, count_procents, ':', label='Процентное соотношение', color='blue', marker='o', markersize=3)
         ax2.set_xlabel('Документы')
-        ax2.set_ylabel('% вхождений')
+        ax2.set_title('Процент вхождений')
+        ax2.set_xticklabels(docs, minor=False, rotation=90)
 
-        fig1.set_size_inches(4, 4)
-        fig2.set_size_inches(4, 4)
+        fig3, ax3 = plt.subplots()
+        ax3.plot(docs, count_pos1, '-', label='Вхождений с оценкой 1', color='green', marker='o', markersize=5)
+        ax3.plot(docs, count_pos2, '--', label='Вхождений с оценкой 2', color='lime', marker='o', markersize=6)
+        ax3.plot(docs, count_neg1, '-.', label='Вхождений с оценкой -1', color='darkred', marker='o', markersize=4)
+        ax3.plot(docs, count_neg2, ':', label='Вхождений с оценкой -2', color='red', marker='o', markersize=3)
+        ax3.set_xlabel('Документы')
+        ax3.set_title('Оценки вхождений')
+        ax3.legend(fontsize=8)
+        ax3.set_xticklabels(docs, minor=False, rotation=90)
+
+        fig1.set_size_inches(3.8, 5)
+        fig2.set_size_inches(3.8, 5)
+        fig3.set_size_inches(3.8, 5)
+        fig1.tight_layout()
+        fig2.tight_layout()
+        fig3.tight_layout()
 
         self.results_graph = ctk.CTkFrame(self.results_window)
-        self.results_graph.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
+        self.results_graph.grid(row=1, column=0, padx=0, pady=0, sticky="nsew")
 
         self.results_graph1 = ctk.CTkFrame(self.results_graph)
-        self.results_graph1.grid(row=0, column=0, padx=10, pady=5, sticky="w")
+        self.results_graph1.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
 
         self.results_graph2 = ctk.CTkFrame(self.results_graph)
-        self.results_graph2.grid(row=0, column=1, padx=10, pady=5, sticky="w")
+        self.results_graph2.grid(row=0, column=1, padx=0, pady=5, sticky="nsew")
+
+        self.results_graph3 = ctk.CTkFrame(self.results_graph)
+        self.results_graph3.grid(row=0, column=2, padx=5, pady=5, sticky="nsew")
 
         canvas1 = FigureCanvasTkAgg(fig1, self.results_graph1)
-        canvas1.get_tk_widget().grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        canvas1.get_tk_widget().grid(row=0, column=0, padx=0, pady=0, sticky="nsew")
 
-        canvas2 = FigureCanvasTkAgg(fig2, self.results_graph2)
-        canvas2.get_tk_widget().grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        canvas2 = FigureCanvasTkAgg(fig2, self.results_graph3)
+        canvas2.get_tk_widget().grid(row=0, column=0, padx=0, pady=0, sticky="nsew")
+
+        canvas3 = FigureCanvasTkAgg(fig3, self.results_graph2)
+        canvas3.get_tk_widget().grid(row=0, column=0, padx=0, pady=0, sticky="nsew")
 
 
     def closing_res(self):
@@ -373,7 +440,7 @@ class App(ctk.CTk):
             cell2 = ctk.CTkLabel(self.file_table, text=file_name, anchor="w", fg_color="#2fa3de", text_color="black", corner_radius=5)
             cell2.grid(row=id, column=0, padx=10, pady=5, sticky="w")
             id += 1
-    
+
     def button_ask_open_dict(self):
 
         dictpath = filedialog.askopenfilename()
