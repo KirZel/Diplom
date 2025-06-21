@@ -183,6 +183,11 @@ class App(ctk.CTk):
 
         self.header_file_table = ctk.CTkFrame(self.file_table, fg_color="transparent")
         self.header_file_table.grid(row=0, column=0, padx=10, pady=5, sticky="w")
+        label_file_table_name = ctk.CTkLabel(self.header_file_table, text="№", font=("Arial", 12, "bold"))
+        label_file_table_name.pack(side="left", padx=(0, 4))
+
+        self.header_file_table = ctk.CTkFrame(self.file_table, fg_color="transparent")
+        self.header_file_table.grid(row=0, column=1, padx=10, pady=5, sticky="w")
         label_file_table_name = ctk.CTkLabel(self.header_file_table, text="Файл", font=("Arial", 12, "bold"))
         label_file_table_name.pack(side="left", padx=(0, 4))
 
@@ -223,7 +228,7 @@ class App(ctk.CTk):
             cell.grid(row=i, column=0, padx=10, pady=5, sticky="w")
             i += 1
 
-        self.keywords_delete_button = ctk.CTkButton(self.keywords_frame, text="Очистить", fg_color="pink", text_color="black", font=("Arial", 12, "bold"), command=self.button_delete_keyword)
+        self.keywords_delete_button = ctk.CTkButton(self.keywords_frame, text="Очистить", fg_color="#d36f6f", text_color="black", font=("Arial", 12, "bold"), command=self.button_delete_keyword)
         self.keywords_delete_button.grid(row=3, column=0, padx=5, pady=5, sticky="w", columnspan=2)
 
     def create_settings(self):
@@ -245,7 +250,7 @@ class App(ctk.CTk):
 
         label = ctk.CTkLabel(self.settings_frame, text=f"Выберите язык документов", font=("Arial", 12))
         label.grid(row=3, column=0, sticky="w", padx=5, pady=5)
-        ranges=["ru","en"]
+        ranges=["Русский","Английский"]
         self.settings_lang = ctk.CTkOptionMenu(self.settings_frame, values=ranges, command=self.set_lang)
         self.settings_lang.grid(row=4, column=0, padx=5, pady=5, sticky="n")
 
@@ -271,7 +276,7 @@ class App(ctk.CTk):
             elif self.keywords == []:
                 mb.showerror("Ошибка", "Список ключевых слов пуст")
             else:
-                if self.lang == "ru":
+                if self.lang == "Русский":
                     reader = FileReader()
                     reader.read_files(self.filepaths)
 
@@ -281,7 +286,7 @@ class App(ctk.CTk):
                     analyzer = Analyzer(self.dictpath)
                     analyzer.analyze(preparer.prep_text_dict, self.keywords, int(self.search_range_l), int(self.search_range_r))
 
-                elif self.lang == "en":
+                elif self.lang == "Английский":
                     reader = FileReader()
                     reader.read_files(self.filepaths)
 
@@ -302,30 +307,23 @@ class App(ctk.CTk):
         self.results_window.geometry("1200x900")
         self.results_window.resizable(False, False)
 
-        #self.sheet = tksheet.Sheet(self.results_window)
-        #self.sheet.grid(row=0, column=0, padx=20, pady=20, sticky="nsew", width=750, height=300)
-        #self.sheet.headers(['Документ', 'Вхождений всего', 'Вхождений 1', 'Вхождений 2', 'Процент Вхождений', 'Вхождений -1', 'Вхождений -2',])
+        self.result_frame = ctk.CTkFrame(self)
+        self.result_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
 
-        self.results_table = ctk.CTkScrollableFrame(self.results_window, width=750, height=300)
-        self.results_table.grid(row=0, column=0, padx=20, pady=20, sticky="w")
+        self.sheet_result = tksheet.Sheet(self.results_window)
+        self.sheet_result.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+        self.sheet_result.headers(['Документ', 'Вхождений всего', 'Процент Вхождений', 'Вхождений 2', 'Вхождений 1', 'Вхождений -1', 'Вхождений -2',])
+        self.sheet_result.enable_bindings(("column_width_resize",))
 
-        names = ['Документ', 'Вхождений всего', 'Вхождений 1', 'Вхождений 2', 'Процент Вхождений', 'Вхождений -1', 'Вхождений -2',]
-        for i in range(0,7):
-            self.header_res_table = ctk.CTkFrame(self.results_table, fg_color="transparent")
-            self.header_res_table.grid(row=0, column=i, padx=10, pady=5, sticky="w")
-            label_dict_table_name = ctk.CTkLabel(self.header_res_table, text=names[i], font=("Arial", 12, "bold"))
-            label_dict_table_name.grid(sticky="nsew",)
-
-        i = 1
+        table_data = []
         for key, value in data.items():
-            i2 = 1
-            cell = ctk.CTkLabel(self.results_table, text=key, anchor="w", fg_color="white", text_color="black", corner_radius=5)
-            cell.grid(row=i, column=0, padx=10, pady=5, sticky="w")
-            for val in value:
-                cell = ctk.CTkLabel(self.results_table, text=val, anchor="w", fg_color="white", text_color="black", corner_radius=5)
-                cell.grid(row=i, column=i2, padx=10, pady=5, sticky="w")
-                i2 += 1
-            i += 1
+            elem = [key, value[0], value[3], value[2], value[1], value[-2], value[-2]]
+            table_data.append(elem)
+        self.sheet_result.set_sheet_data(table_data)
+        self.sheet_result.highlight_columns(3, fg="#03a8a0")
+        self.sheet_result.highlight_columns(4, fg="#3FA703")
+        self.sheet_result.highlight_columns(5, fg="#fa6323")
+        self.sheet_result.highlight_columns(6, fg="#ad0000")
 
         self.results_window.protocol("WM_DELETE_WINDOW", self.closing_res)
 
@@ -334,7 +332,7 @@ class App(ctk.CTk):
         for doc in docs_full:
             name = doc.split('/')[-1]
             if len(name) > 20:
-                name = name[0:7] + '...' + name[-7:-1] + name[-1]
+                name = name[0:7] + "..." + name[-7:-1] + name[-1]
                 print(name)
             docs.append(name)
         count = []
@@ -352,24 +350,23 @@ class App(ctk.CTk):
             count_neg2.append(values[-2])
 
         fig1, ax1 = plt.subplots()
-        ax1.plot(docs, count, ':', label='Вхождений всего', color='blue', marker='o', markersize=3)
+        ax1.plot(docs, count, '-', label='Вхождений всего', color='blue', marker='o', markersize=3)
         ax1.set_xlabel('Документы')
         ax1.set_title('Количествово вхождений')
-        ax1.legend(fontsize=9)
         ax1.set_xticklabels(docs, minor=False, rotation=90)
 
         fig2, ax2 = plt.subplots()
 
-        ax2.plot(docs, count_procents, ':', label='Процентное соотношение', color='blue', marker='o', markersize=3)
+        ax2.plot(docs, count_procents, '-', label='Процентное соотношение', color='blue', marker='o', markersize=3)
         ax2.set_xlabel('Документы')
         ax2.set_title('Процент вхождений')
         ax2.set_xticklabels(docs, minor=False, rotation=90)
 
         fig3, ax3 = plt.subplots()
-        ax3.plot(docs, count_pos1, '-', label='Вхождений с оценкой 1', color='green', marker='o', markersize=5)
-        ax3.plot(docs, count_pos2, '--', label='Вхождений с оценкой 2', color='lime', marker='o', markersize=6)
-        ax3.plot(docs, count_neg1, '-.', label='Вхождений с оценкой -1', color='darkred', marker='o', markersize=4)
-        ax3.plot(docs, count_neg2, ':', label='Вхождений с оценкой -2', color='red', marker='o', markersize=3)
+        ax3.plot(docs, count_pos1, '-', label='Вхождений с оценкой 1', color="#3FA703", marker='o', markersize=5)
+        ax3.plot(docs, count_pos2, '--', label='Вхождений с оценкой 2', color="#03a8a0", marker='o', markersize=6)
+        ax3.plot(docs, count_neg1, '-.', label='Вхождений с оценкой -1', color="#fa6323", marker='o', markersize=4)
+        ax3.plot(docs, count_neg2, ':', label='Вхождений с оценкой -2', color="#ad0000", marker='o', markersize=3)
         ax3.set_xlabel('Документы')
         ax3.set_title('Оценки вхождений')
         ax3.legend(fontsize=8)
@@ -437,8 +434,10 @@ class App(ctk.CTk):
         id = 1
         for file in self.filepaths:
             file_name = file.split('/')[-1]
+            cell1 = ctk.CTkLabel(self.file_table, text=id, anchor="w", fg_color="#2fa3de", text_color="black", corner_radius=5)
+            cell1.grid(row=id, column=0, padx=10, pady=5, sticky="nsew")
             cell2 = ctk.CTkLabel(self.file_table, text=file_name, anchor="w", fg_color="#2fa3de", text_color="black", corner_radius=5)
-            cell2.grid(row=id, column=0, padx=10, pady=5, sticky="w")
+            cell2.grid(row=id, column=1, padx=10, pady=5, sticky="nsew")
             id += 1
 
     def button_ask_open_dict(self):
