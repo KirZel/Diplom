@@ -60,32 +60,14 @@ class App(ctk.CTk):
             self.dict_button2 = ctk.CTkButton(self.new_window, text="Сохранить как", command=self.save_dict_as)
             self.dict_button2.grid(row=5, column=1, padx=20, pady=20, sticky="s")
 
-            self.dict_table_draw(self.emot_dict)
-
-            #self.test_entry = ctk.CTkEntry(self.new_window)
-            #self.test_entry.grid(row=6, column=0, padx=20, pady=20, sticky="nsew")
-            #self.test_entry.bind("<Return>", self.change)
-            #table.append(self.test_entry)
-            #table[0].insert(0,"Text")
-            #self.new_window
-            # Create the table with write=1 to enable editing
-            #self.table = CTkTable(self.new_window, values=self.emot_dict, write=1)
-            #self.table.grid(row=6, column=0, padx=20, pady=20, sticky="nsew")
-
+            self.dict_table_draw()
             self.new_window.protocol("WM_DELETE_WINDOW", self.closing_dict)
-
-    def change(self, event):
-        print(event)
-        print(event.widget.widgetName)
-        print(event.widget.grid_info())
-        print(self.test_entry.get())
 
     def closing_dict(self):
         self.dict_redactor_closed_flag = True
         self.new_window.destroy()
 
-    def dict_table_draw(self, flag):
-
+    def dict_table_draw(self):
         self.sheet = tksheet.Sheet(self.dict_table)
         self.sheet.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
         self.sheet.headers(["Слово", "Оценка"])
@@ -110,7 +92,6 @@ class App(ctk.CTk):
             if elem[0] != "":
                 edict[elem[0]] = elem[1]
         self.emot_dict = edict
-
 
     def load_dict(self):
         filepath = filedialog.askopenfilename()
@@ -210,22 +191,27 @@ class App(ctk.CTk):
         self.settings_frame.grid(row=1, column=1, padx=20, pady=20, sticky="se")
         label = ctk.CTkLabel(self.settings_frame, text="Настройки и запуск", font=("Arial", 12, "bold"))
         label.grid(row=0, column=0, sticky="w", padx=5, pady=5)
-        
-        label = ctk.CTkLabel(self.settings_frame, text=f"Выберите размер контекста", font=("Arial", 12))
-        label.grid(row=1, column=0, sticky="w", padx=20, pady=5)
+
         ranges=["1","2","3","4","5","6"]
-        self.settings_range = ctk.CTkOptionMenu(self.settings_frame, values=ranges, command=self.set_range)
-        self.settings_range.grid(row=2, column=0, padx=5, pady=5, sticky="n")
+        label = ctk.CTkLabel(self.settings_frame, text=f"Выберите размер левого контекста", font=("Arial", 12))
+        label.grid(row=1, column=0, sticky="w", padx=5, pady=5)
+        self.settings_range_l = ctk.CTkOptionMenu(self.settings_frame, values=ranges, command=self.set_range)
+        self.settings_range_l.grid(row=2, column=0, padx=5, pady=5, sticky="n")
+
+        label = ctk.CTkLabel(self.settings_frame, text=f"Выберите размер правого контекста", font=("Arial", 12))
+        label.grid(row=1, column=1, sticky="w", padx=5, pady=5)
+        self.settings_range_r = ctk.CTkOptionMenu(self.settings_frame, values=ranges, command=self.set_range)
+        self.settings_range_r.grid(row=2, column=1, padx=5, pady=5, sticky="n")
 
         label = ctk.CTkLabel(self.settings_frame, text=f"Выберите язык документов", font=("Arial", 12))
-        label.grid(row=1, column=1, sticky="w", padx=20, pady=5)
+        label.grid(row=3, column=0, sticky="w", padx=5, pady=5)
         ranges=["ru","en"]
         self.settings_lang = ctk.CTkOptionMenu(self.settings_frame, values=ranges, command=self.set_lang)
-        self.settings_lang.grid(row=2, column=1, padx=5, pady=5, sticky="n")
+        self.settings_lang.grid(row=4, column=0, padx=5, pady=5, sticky="n")
 
 
         self.keywords_add_button = ctk.CTkButton(self.settings_frame, text="Начать анализ", font=("Arial", 20, "bold"), command=self.start_analyze)
-        self.keywords_add_button.grid(row=3, column=0, padx=5, pady=5, sticky="s", columnspan=2)
+        self.keywords_add_button.grid(row=5, column=0, padx=5, pady=5, sticky="s", columnspan=2)
 
     def set_range(self, value):
         self.search_range = value
@@ -252,7 +238,7 @@ class App(ctk.CTk):
                     preparer.prepare(reader.files_text)
 
                     analyzer = Analyzer(self.dictpath)
-                    analyzer.analyze(preparer.prep_text_dict, self.keywords, int(self.search_range))
+                    analyzer.analyze(preparer.prep_text_dict, self.keywords, int(self.search_range_l), int(self.search_range_r))
 
                 elif self.lang == "en":
                     reader = FileReader()
@@ -262,7 +248,7 @@ class App(ctk.CTk):
                     preparer.prepare_en(reader.files_text)
 
                     analyzer = Analyzer(self.dictpath)
-                    analyzer.analyze_en(preparer.prep_text_dict,self.keywords, int(self.search_range))
+                    analyzer.analyze_en(preparer.prep_text_dict,self.keywords, int(self.search_range_l), int(self.search_range_r))
 
                 self.open_results_window(analyzer.analyzed_data)
 
@@ -333,12 +319,10 @@ class App(ctk.CTk):
         ax2.set_ylabel('% вхождений')
 
         fig1.set_size_inches(4, 4)
-
         fig2.set_size_inches(4, 4)
 
         self.results_graph = ctk.CTkFrame(self.results_window)
         self.results_graph.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
-
 
         self.results_graph1 = ctk.CTkFrame(self.results_graph)
         self.results_graph1.grid(row=0, column=0, padx=10, pady=5, sticky="w")
