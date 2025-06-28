@@ -1,3 +1,5 @@
+import pickle
+
 class DictWork():
     def __init__(self,dict_name):
         self.dict_name = dict_name
