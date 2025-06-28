@@ -1,6 +1,6 @@
-from .model.TextPrepare import TextPrepare
-from .model.Analyzer import Analyzer
-from .model.FileReader import FileReader
+from models.TextPrepare import TextPrepare
+from models.Analyzer import Analyzer
+from models.FileReader import FileReader
 import customtkinter as ctk
 from tkinter import filedialog
 from tkinter import messagebox as mb

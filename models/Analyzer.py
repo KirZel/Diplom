@@ -1,8 +1,6 @@
 from nltk.stem.snowball import SnowballStemmer
 from nltk.stem import WordNetLemmatizer
 import pickle
-from TextPrepare import TextPrepare
-from FileReader import FileReader
 import matplotlib.pyplot as plt
 
 class Analyzer():
@@ -97,6 +95,9 @@ class Analyzer():
 
 
 if __name__ == "__main__":
+
+    from TextPrepare import TextPrepare
+    from FileReader import FileReader
 
     reader = FileReader()
     reader.read_files(['C:/Dev/DIPLOM/docs/NSS-2010.pdf', 'C:/Dev/DIPLOM/docs/NSS-2015.pdf', 'C:/Dev/DIPLOM/docs/NSS-2017.pdf'])
