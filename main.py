@@ -67,6 +67,7 @@ class App(ctk.CTk):
 
             self.dict_table_draw()
             self.new_window.protocol("WM_DELETE_WINDOW", self.closing_dict)
+            self.new_window.after(80, self.new_window.lift)
 
     def closing_dict(self):
         self.dict_redactor_closed_flag = True
@@ -396,6 +397,7 @@ class App(ctk.CTk):
 
         canvas3 = FigureCanvasTkAgg(fig3, self.results_graph2)
         canvas3.get_tk_widget().grid(row=0, column=0, padx=0, pady=0, sticky="nsew")
+        self.results_window.after(80, self.results_window.lift)
 
 
     def closing_res(self):
